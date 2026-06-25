@@ -1,5 +1,5 @@
 # Unit-Economics-Audit-Channel-Profitability-Analysis
-Built a Unit Economics Audit analyzing 6 acquisition channels (2020-2026), identified ₹977K annual loss, designed reallocation model for break-even in 6 months.
+Built an Unit Economics Audit analyzing 6 acquisition channels (2020-2026), identified ₹977K annual loss, designed reallocation model for break-even in 6 months.
 
 ## Business Problem
 Modern businesses invest heavily across multiple marketing channels to acquire customers. However, high acquisition volume does not necessarily translate into profitable growth.
