@@ -109,21 +109,33 @@ Business Recommendations
 ```
 ---
 
-# SQL Section
-SQL
+````markdown
+# SQL Scripts
 
+This folder contains all SQL scripts used throughout the project, from database creation to exploratory data analysis.
+
+---
 
 ## 📄 01_Database_Creation.sql
 
+### Purpose
+Creates the project database and all required fact and dimension tables.
+
+### Key Components
+- Database Creation
+- Dimension Tables
+  - `dim_customers`
+  - `dim_product`
+- Fact Tables
+  - `fact_orders`
+  - `fact_marketing_spending`
+
+```sql
 -- Create Database
-
 CREATE DATABASE DB_Acquisition_Health_Audit;
-
 USE DB_Acquisition_Health_Audit;
 
-
 -- Create Dimension Tables
-
 CREATE TABLE dim_customers (
     customer_id VARCHAR(50),
     country VARCHAR(50),
@@ -159,7 +171,6 @@ CREATE TABLE dim_product (
     avg_delivery_days DECIMAL(5,2)
 );
 
--- Create Fact Tables
 CREATE TABLE fact_marketing_spending (
     date DATE,
     year INT,
@@ -201,31 +212,35 @@ CREATE TABLE fact_orders (
     pages_viewed_before_purchase INT,
     is_repeat_customer INT
 );
+```
 
-## 📄 03_Data_Validation.sql
+---
 
-=========================================================
-  Data Validation
-=========================================================
+## 📄 02_Data_Validation.sql
 
--- 1. Count all rows in Orders table
+### Purpose
+Ensures data integrity before performing analysis.
 
-SELECT COUNT(*) AS Total_rows
+### Validation Checks
+1. Total records in Orders table
+2. Duplicate Order IDs
+3. Revenue calculation validation
+4. Marketing spend by acquisition channel
+
+```sql
+-- 1. Count Total Rows
+SELECT COUNT(*) AS Total_Rows
 FROM fact_orders;
 
-
--- 2. Check duplicate Order IDs
-
+-- 2. Duplicate Order IDs
 SELECT
     order_id,
-    COUNT(*) AS Total_count
+    COUNT(*) AS Total_Count
 FROM fact_orders
 GROUP BY order_id
 HAVING COUNT(*) > 1;
 
-
--- 3. Validate calculated revenue against total_amount_usd
-
+-- 3. Revenue Validation
 SELECT
     order_id,
     subtotal_usd,
@@ -233,122 +248,132 @@ SELECT
     tax_amount_usd,
     shipping_fee_usd,
     total_amount_usd,
-    (subtotal_usd - discount_amount_usd + tax_amount_usd + shipping_fee_usd) AS Revenue_match,
+    (subtotal_usd - discount_amount_usd + tax_amount_usd + shipping_fee_usd) AS Calculated_Total,
     CASE
-        WHEN (subtotal_usd - discount_amount_usd + tax_amount_usd + shipping_fee_usd)
-             = total_amount_usd
+        WHEN total_amount_usd =
+             (subtotal_usd - discount_amount_usd + tax_amount_usd + shipping_fee_usd)
         THEN 'Match'
-        ELSE 'Unmatch'
-    END AS Validation_status
+        ELSE 'Mismatch'
+    END AS Validation_Status
 FROM fact_orders
 WHERE total_amount_usd <>
       (subtotal_usd - discount_amount_usd + tax_amount_usd + shipping_fee_usd);
 
-
--- 4. Calculate total marketing spend by acquisition channel
-
+-- 4. Marketing Spend
 SELECT
     acquisition_channel,
-    SUM(marketing_spend_usd) AS Total_spend
+    SUM(marketing_spend_usd) AS Total_Spend
 FROM fact_marketing_spending
 GROUP BY acquisition_channel
 ORDER BY acquisition_channel;
+```
 
-## 📄 04_Data_Exploration.sql
+---
 
-=========================================================
-  Data Exploration
-=========================================================
+## 📄 03_Data_Exploration.sql
 
--- 1. Overall customer portfolio metrics
+### Purpose
+Explores customer behavior and overall business performance.
 
+### Analysis Performed
+- Customer Portfolio
+- Customer Lifetime Value (CLV)
+- Customer Lifespan
+- Average Order Value (AOV)
+- Purchase Frequency
+- Delivered Orders & Revenue
+
+```sql
+-- Overall Customer Portfolio
 SELECT
-    COUNT(customer_id) AS total_customers,
-    FORMAT(SUM(total_amount_usd),'C','en-US') AS overall_portfolio_ltv,
-    FORMAT(AVG(total_amount_usd),'C','en-US') AS average_ltv_per_customer,
-    FORMAT(MIN(total_amount_usd),'C','en-US') AS min_customer_spend,
-    FORMAT(MAX(total_amount_usd),'C','en-US') AS max_customer_spend
+    COUNT(customer_id) AS Total_Customers,
+    FORMAT(SUM(total_amount_usd),'C','en-US') AS Portfolio_Value,
+    FORMAT(AVG(total_amount_usd),'C','en-US') AS Average_LTV,
+    FORMAT(MIN(total_amount_usd),'C','en-US') AS Minimum_Spend,
+    FORMAT(MAX(total_amount_usd),'C','en-US') AS Maximum_Spend
 FROM fact_orders;
 
--- 2. Historical Customer Lifetime Value (CLV)
-
+-- Historical CLV
 SELECT
     customer_id,
-    SUM(total_amount_usd) AS historical_clv
+    SUM(total_amount_usd) AS Historical_CLV
 FROM fact_orders
 WHERE order_status='Delivered'
 GROUP BY customer_id;
 
--- 3. Customer lifespan, AOV and purchase frequency
-
+-- Customer Metrics
 SELECT
     customer_id,
-    DATEDIFF(DAY,MIN(order_date),MAX(order_date)) AS lifespan_days,
-    SUM(total_amount_usd)/COUNT(*) AS AOV,
-    COUNT(*)*1.0/
-    DATEDIFF(DAY,MIN(order_date),MAX(order_date)) AS purchase_frequency
+    DATEDIFF(DAY,MIN(order_date),MAX(order_date)) AS Lifespan_Days,
+    SUM(total_amount_usd)/COUNT(*) AS Average_Order_Value,
+    COUNT(*)*1.0 /
+    DATEDIFF(DAY,MIN(order_date),MAX(order_date)) AS Purchase_Frequency
 FROM fact_orders
 WHERE order_status='Delivered'
 GROUP BY customer_id;
 
--- 4. Total delivered orders and revenue
-
+-- Delivered Revenue
 SELECT
-    COUNT(*) AS Total_orders,
-    SUM(total_amount_usd) AS Total_revenue
+    COUNT(*) AS Delivered_Orders,
+    SUM(total_amount_usd) AS Total_Revenue
 FROM fact_orders
 WHERE order_status='Delivered';
+```
 
+---
 
-## 📄 05_Exploratory_Data_Analysis.sql
+## 📄 04_Exploratory_Data_Analysis.sql
 
-=========================================================
-  Exploratory Data Analysis
-=========================================================
+### Purpose
+Analyzes customer segments and marketing channel performance.
 
--- 1. Membership Tier Analysis
+### Analysis Performed
+- Membership Tier Performance
+- Marketing Channel Performance
+- Click Through Rate (CTR)
+- Cost Per Click (CPC)
 
+```sql
+-- Membership Tier Analysis
 SELECT
     c.membership_tier,
-    COUNT(DISTINCT o.customer_id) AS Total_customers,
+    COUNT(DISTINCT o.customer_id) AS Total_Customers,
     ROUND(
         SUM(o.total_amount_usd) /
         COUNT(DISTINCT o.customer_id),
         2
-    ) AS AverageLifetimeSpend
+    ) AS Average_Lifetime_Spend
 FROM fact_orders o
 LEFT JOIN dim_customers c
-ON o.customer_id=c.customer_id
+ON o.customer_id = c.customer_id
 WHERE order_status='Delivered'
 GROUP BY c.membership_tier
-ORDER BY Total_customers;
+ORDER BY Total_Customers;
 
-
--- 2. Marketing Channel Performance
-
+-- Marketing Performance
 SELECT
     acquisition_channel,
-    SUM(impressions) AS total_impressions,
-    SUM(clicks) AS total_clicks,
+    SUM(impressions) AS Total_Impressions,
+    SUM(clicks) AS Total_Clicks,
     ROUND(
-        (SUM(clicks)*100.0)/
+        (SUM(clicks) * 100.0) /
         NULLIF(SUM(impressions),0),
         2
-    ) AS ctr_percentage,
+    ) AS CTR_Percentage,
     ROUND(
-        SUM(marketing_spend_usd)/
+        SUM(marketing_spend_usd) /
         NULLIF(SUM(clicks),0),
         2
-    ) AS cpc_usd
+    ) AS CPC_USD
 FROM fact_marketing_spending
-WHERE acquisition_channel IN
-(
-'Email Campaign',
-'Paid Ad',
-'Social Media'
+WHERE acquisition_channel IN (
+    'Email Campaign',
+    'Paid Ad',
+    'Social Media'
 )
 GROUP BY acquisition_channel;
-
+```
+````
 
 ## Executive Summary
 
@@ -402,9 +427,7 @@ Here's what I'd include.
 
 ├── README.md ⭐
 
-├── Business Problem.pdf
-
-├── Project Objectives.pdf
+├── Business Problem and Project Objective PDF
 
 ├── Project Workflow.png
 
@@ -433,9 +456,11 @@ Here's what I'd include.
 ├── Business Insights and recommendation.pdf
 
 👤 Author
-Yaman Kumar
+**Yaman Kumar**  
 Data Analyst | Building hands-on projects in SQL, Power BI & Excel
-📂 GitHub Portfolio • 💼 LinkedIn
+
+📂 **GitHub Portfolio:** [github.com/yourusername](https://github.com/Yamankumar445)  
+💼 **LinkedIn:** [linkedin.com/in/yourusername](www.linkedin.com/in/yaman-kumar-dhakrey-7a4b67260)
 
 📄 License
 This project is open-source and available under the MIT License.
