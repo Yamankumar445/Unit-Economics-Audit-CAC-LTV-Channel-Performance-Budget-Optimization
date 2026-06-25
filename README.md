@@ -423,7 +423,6 @@ Here's what I'd include.
 
 📂 Customer-Acquisition-Health-Audit
 
-│
 
 ├── README.md ⭐
 
@@ -433,34 +432,35 @@ Here's what I'd include.
 
 ├── Dataset
 
-│      Raw Dataset.xlsx
+   Raw Dataset.xlsx
 
 ├── SQL
 
-│      01_Project_SQL_Script.sql│
+   01_Project_SQL_Script.sql│
 
 ├── Power BI
 
-│      Dashboard.pbix
+   Dashboard.pbix
 
 ├── Dashboard Images
 
-│      Executive Summary.png
+   Executive Summary.png
 
-│      Dashboard.png
+   Dashboard.png
 
 ├── Data Model
 
-│      Star Schema.png
+   Star Schema.png
 
 ├── Business Insights and recommendation.pdf
 
-👤 Author
+## 👤 Author
+
 **Yaman Kumar**  
 Data Analyst | Building hands-on projects in SQL, Power BI & Excel
 
-📂 **GitHub Portfolio:** [github.com/yourusername](https://github.com/Yamankumar445)  
-💼 **LinkedIn:** [linkedin.com/in/yourusername](www.linkedin.com/in/yaman-kumar-dhakrey-7a4b67260)
+📂 **GitHub Portfolio:** [Yamankumar445](https://github.com/Yamankumar445)  
+💼 **LinkedIn:** [Yaman Kumar Dhakrey](https://www.linkedin.com/in/yaman-kumar-dhakrey-7a4b67260)
 
 📄 License
 This project is open-source and available under the MIT License.
