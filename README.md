@@ -114,13 +114,6 @@ Business Recommendations
 
 This folder contains all SQL scripts used throughout the project, from database creation to exploratory data analysis.
 
----
-
-## 📄 01_Database_Creation.sql
-
-### Purpose
-Creates the project database and all required fact and dimension tables.
-
 ````markdown
 # SQL Scripts
 
