@@ -122,15 +122,7 @@ This folder contains all SQL scripts used throughout the project, from database 
 Creates the project database and all required fact and dimension tables.
 
 ### Key Components
-- Database Creation
-- Dimension Tables
-  - `dim_customers`
-  - `dim_product`
-- Fact Tables
-  - `fact_orders`
-  - `fact_marketing_spending`
 
-```sql
 -- Create Database
 CREATE DATABASE DB_Acquisition_Health_Audit;
 USE DB_Acquisition_Health_Audit;
