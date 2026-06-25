@@ -1,5 +1,5 @@
-# UUnit-Economics-Audit-Channel-Profitability-Analysis
-Built a Unit Economics Audit analyzing 6 acquisition channels (2020-2025), identified ₹977K annual loss, designed reallocation model for break-even in 6 months.
+# Unit-Economics-Audit-Channel-Profitability-Analysis
+Built a Unit Economics Audit analyzing 6 acquisition channels (2020-2026), identified ₹977K annual loss, designed reallocation model for break-even in 6 months.
 
 ## Business Problem
 Modern businesses invest heavily across multiple marketing channels to acquire customers. However, high acquisition volume does not necessarily translate into profitable growth.
@@ -13,7 +13,7 @@ The organization lacked visibility into:
 
 Without these insights, management risks allocating budget toward loss-making channels while overlooking profitable opportunities.
 
-This project was developed to perform a complete **Unit Economics Audit**, transforming raw transactional and marketing data into executive-level insights that support strategic decision-making.
+This project was developed to perform a **Unit Economics Audit**, transforming raw transactional and marketing data into executive-level insights that support strategic decision-making.
 ---
 
 # Project Objectives
@@ -63,97 +63,300 @@ This project aims to:
 # End-to-End Workflow
 
 ```
-<img width="1881" height="836" alt="ChatGPT Image Jun 25, 2026, 10_44_56 AM" src="https://github.com/user-attachments/assets/3f2a6911-3c4a-4de4-b976-48bd8b410dbf" />
+Business Problem 
+↓
+Raw Dataset
+↓
+
+Excel
+• Formatting
+• Validation
+
+↓
+
+SQL Server
+• Database Creation
+• Fact Tables
+• Dimension Tables
+
+↓
+
+SQL Analysis
+• Data Validation
+• Data Exploration
+• Exploratory Data Analysis
+
+↓
+
+Power BI
+• Import Mode
+• Data Modeling
+• Star Schema
+• DAX Measures
+
+↓
+
+Interactive Dashboard
+
+↓
+
+Executive Summary
+
+↓
+
+Business Recommendations
 
 ```
-
-This should be a PNG in the README.
-
 ---
 
 # SQL Section
-
-Don't upload one SQL file.
-
-Organize it like this.
-
-```
 SQL
 
-│
 
-├── 01_Database_Creation.sql
+## 📄 01_Database_Creation.sql
 
-├── 02_Table_Creation.sql
+-- Create Database
 
-├── 03_Data_Validation.sql
+CREATE DATABASE DB_Acquisition_Health_Audit;
 
-├── 04_Data_Exploration.sql
+USE DB_Acquisition_Health_Audit;
 
-└── 05_Exploratory_Data_Analysis.sql
-```
 
-Recruiters love organized repositories.
+-- Create Dimension Tables
 
----
+CREATE TABLE dim_customers (
+    customer_id VARCHAR(50),
+    country VARCHAR(50),
+    age INT,
+    gender VARCHAR(20),
+    membership_tier VARCHAR(20),
+    registration_date DATE,
+    total_orders INT,
+    total_spend_usd DECIMAL(12,2),
+    avg_order_value_usd DECIMAL(10,2),
+    days_since_last_purchase INT,
+    preferred_category VARCHAR(100),
+    preferred_device VARCHAR(50),
+    preferred_payment_method VARCHAR(50),
+    acquisition_channel VARCHAR(50),
+    reviews_given INT,
+    avg_review_score DECIMAL(3,2),
+    returns_made INT,
+    wishlist_items INT,
+    newsletter_subscribed INT,
+    churned INT
+);
 
-# Data Validation
+CREATE TABLE dim_product (
+    category VARCHAR(100),
+    product_name VARCHAR(150),
+    total_orders INT,
+    total_revenue_usd DECIMAL(15,2),
+    avg_price DECIMAL(10,2),
+    avg_rating DECIMAL(3,2),
+    return_rate DECIMAL(5,2),
+    avg_discount_pct DECIMAL(5,2),
+    avg_delivery_days DECIMAL(5,2)
+);
 
-Your validation queries fit perfectly here.
+-- Create Fact Tables
+CREATE TABLE fact_marketing_spending (
+    date DATE,
+    year INT,
+    month INT,
+    quarter VARCHAR(5),
+    acquisition_channel VARCHAR(50),
+    impressions INT,
+    clicks INT,
+    marketing_spend_usd DECIMAL(12,2)
+);
 
-Examples:
+CREATE TABLE fact_orders (
+    order_id VARCHAR(50) PRIMARY KEY,
+    customer_id VARCHAR(50),
+    order_date DATE,
+    year INT,
+    month INT,
+    quarter VARCHAR(5),
+    day_of_week VARCHAR(20),
+    product_name VARCHAR(150),
+    category VARCHAR(100),
+    unit_price_usd DECIMAL(10,2),
+    quantity INT,
+    subtotal_usd DECIMAL(10,2),
+    discount_pct INT,
+    discount_amount_usd DECIMAL(10,2),
+    shipping_fee_usd DECIMAL(10,2),
+    tax_pct INT,
+    tax_amount_usd DECIMAL(10,2),
+    total_amount_usd DECIMAL(10,2),
+    payment_method VARCHAR(50),
+    device_used VARCHAR(50),
+    delivery_days INT,
+    delivery_date DATE,
+    order_status VARCHAR(50),
+    returned INT,
+    customer_rating INT,
+    session_duration_minutes DECIMAL(10,2),
+    pages_viewed_before_purchase INT,
+    is_repeat_customer INT
+);
 
-```
-✔ Row Count Validation
+## 📄 03_Data_Validation.sql
 
-✔ Duplicate Order Detection
+=========================================================
+  Data Validation
+=========================================================
 
-✔ Revenue Calculation Validation
+-- 1. Count all rows in Orders table
 
-✔ Marketing Spend Validation
-```
+SELECT COUNT(*) AS Total_rows
+FROM fact_orders;
 
----
 
-# Data Exploration
+-- 2. Check duplicate Order IDs
 
-Use queries such as:
+SELECT
+    order_id,
+    COUNT(*) AS Total_count
+FROM fact_orders
+GROUP BY order_id
+HAVING COUNT(*) > 1;
 
-```
-Overall Revenue
 
-Customer Lifetime Value
+-- 3. Validate calculated revenue against total_amount_usd
 
-Purchase Frequency
+SELECT
+    order_id,
+    subtotal_usd,
+    discount_amount_usd,
+    tax_amount_usd,
+    shipping_fee_usd,
+    total_amount_usd,
+    (subtotal_usd - discount_amount_usd + tax_amount_usd + shipping_fee_usd) AS Revenue_match,
+    CASE
+        WHEN (subtotal_usd - discount_amount_usd + tax_amount_usd + shipping_fee_usd)
+             = total_amount_usd
+        THEN 'Match'
+        ELSE 'Unmatch'
+    END AS Validation_status
+FROM fact_orders
+WHERE total_amount_usd <>
+      (subtotal_usd - discount_amount_usd + tax_amount_usd + shipping_fee_usd);
 
-Average Order Value
 
-Marketing Spend
+-- 4. Calculate total marketing spend by acquisition channel
 
-CTR
+SELECT
+    acquisition_channel,
+    SUM(marketing_spend_usd) AS Total_spend
+FROM fact_marketing_spending
+GROUP BY acquisition_channel
+ORDER BY acquisition_channel;
 
-CPC
+## 📄 04_Data_Exploration.sql
 
-Membership Tier Analysis
-```
+=========================================================
+  Data Exploration
+=========================================================
 
----
+-- 1. Overall customer portfolio metrics
 
-# Dashboard Story
+SELECT
+    COUNT(customer_id) AS total_customers,
+    FORMAT(SUM(total_amount_usd),'C','en-US') AS overall_portfolio_ltv,
+    FORMAT(AVG(total_amount_usd),'C','en-US') AS average_ltv_per_customer,
+    FORMAT(MIN(total_amount_usd),'C','en-US') AS min_customer_spend,
+    FORMAT(MAX(total_amount_usd),'C','en-US') AS max_customer_spend
+FROM fact_orders;
 
-Instead of saying
+-- 2. Historical Customer Lifetime Value (CLV)
 
-Dashboard 1
+SELECT
+    customer_id,
+    SUM(total_amount_usd) AS historical_clv
+FROM fact_orders
+WHERE order_status='Delivered'
+GROUP BY customer_id;
 
-Dashboard 2
+-- 3. Customer lifespan, AOV and purchase frequency
 
-Write
+SELECT
+    customer_id,
+    DATEDIFF(DAY,MIN(order_date),MAX(order_date)) AS lifespan_days,
+    SUM(total_amount_usd)/COUNT(*) AS AOV,
+    COUNT(*)*1.0/
+    DATEDIFF(DAY,MIN(order_date),MAX(order_date)) AS purchase_frequency
+FROM fact_orders
+WHERE order_status='Delivered'
+GROUP BY customer_id;
+
+-- 4. Total delivered orders and revenue
+
+SELECT
+    COUNT(*) AS Total_orders,
+    SUM(total_amount_usd) AS Total_revenue
+FROM fact_orders
+WHERE order_status='Delivered';
+
+
+## 📄 05_Exploratory_Data_Analysis.sql
+
+=========================================================
+  Exploratory Data Analysis
+=========================================================
+
+-- 1. Membership Tier Analysis
+
+SELECT
+    c.membership_tier,
+    COUNT(DISTINCT o.customer_id) AS Total_customers,
+    ROUND(
+        SUM(o.total_amount_usd) /
+        COUNT(DISTINCT o.customer_id),
+        2
+    ) AS AverageLifetimeSpend
+FROM fact_orders o
+LEFT JOIN dim_customers c
+ON o.customer_id=c.customer_id
+WHERE order_status='Delivered'
+GROUP BY c.membership_tier
+ORDER BY Total_customers;
+
+
+-- 2. Marketing Channel Performance
+
+SELECT
+    acquisition_channel,
+    SUM(impressions) AS total_impressions,
+    SUM(clicks) AS total_clicks,
+    ROUND(
+        (SUM(clicks)*100.0)/
+        NULLIF(SUM(impressions),0),
+        2
+    ) AS ctr_percentage,
+    ROUND(
+        SUM(marketing_spend_usd)/
+        NULLIF(SUM(clicks),0),
+        2
+    ) AS cpc_usd
+FROM fact_marketing_spending
+WHERE acquisition_channel IN
+(
+'Email Campaign',
+'Paid Ad',
+'Social Media'
+)
+GROUP BY acquisition_channel;
+
 
 ## Executive Summary
 
 Purpose
 
 Provide senior management with an overview of acquisition profitability, unit economics and recommended business actions.
+
+![image alt](https://github.com/Yamankumar445/Unit-Economics-Audit-CAC-LTV-Channel-Performance-Budget-Optimization/blob/5fbb95b1e454dc1556a95c6604ac66ea75b9d63f/Executive%20Summary.png)
 
 ---
 
@@ -163,11 +366,11 @@ Purpose
 
 Analyze acquisition performance across channels, customers and marketing efficiency using interactive KPIs and visualizations.
 
+![image alt](https://github.com/Yamankumar445/Unit-Economics-Audit-CAC-LTV-Channel-Performance-Budget-Optimization/blob/5fbb95b1e454dc1556a95c6604ac66ea75b9d63f/Dashboard.png)
+
 ---
 
 # Business Recommendations
-
-This is one of the strongest parts of your project because it's based on your analysis.
 
 ## Recommended Actions
 
@@ -193,7 +396,6 @@ Improve marketing efficiency, increase the LTV:CAC ratio, and move toward sustai
 
 Here's what I'd include.
 
-```
 📂 Customer-Acquisition-Health-Audit
 
 │
@@ -210,39 +412,13 @@ Here's what I'd include.
 
 │      Raw Dataset.xlsx
 
-│      Data Dictionary.xlsx
-
-│
-
-├── Excel
-
-│      Data Cleaning.xlsx
-
-│      Data Validation.xlsx
-
-│
-
 ├── SQL
 
-│      01 Database.sql
-
-│      02 Tables.sql
-
-│      03 Data Validation.sql
-
-│      04 Data Exploration.sql
-
-│      05 EDA.sql
-
-│
+│      01_Project_SQL_Script.sql│
 
 ├── Power BI
 
 │      Dashboard.pbix
-
-│      DAX Measures.md
-
-│
 
 ├── Dashboard Images
 
@@ -250,31 +426,16 @@ Here's what I'd include.
 
 │      Dashboard.png
 
-│
-
 ├── Data Model
 
 │      Star Schema.png
 
-│
+├── Business Insights and recommendation.pdf
 
-├── Business Insights.pdf
+👤 Author
+Yaman Kumar
+Data Analyst | Building hands-on projects in SQL, Power BI & Excel
+📂 GitHub Portfolio • 💼 LinkedIn
 
-└── Recommendations.pdf
-```
-
----
-
-## My recommendation
-
-Given the quality of your work, **don't settle for a basic GitHub README**. Build it like a professional analytics case study. A recruiter should feel they're reading documentation from an analyst at a consulting firm rather than a student portfolio.
-
-If we do it properly, this can become one of the strongest projects in your portfolio. I recommend creating **five polished documents** alongside the README:
-
-1. **Business Problem.pdf**
-2. **Project Objectives.pdf**
-3. **Business Questions.pdf**
-4. **Business Insights & Recommendations.pdf**
-5. **Technical Documentation.pdf** (covering Excel → SQL → Data Model → Power BI → DAX)
-
-Together with your screenshots, SQL scripts, PBIX file, and README, this presents a complete end-to-end analytics project.
+📄 License
+This project is open-source and available under the MIT License.
