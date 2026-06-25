@@ -121,10 +121,24 @@ This folder contains all SQL scripts used throughout the project, from database 
 ### Purpose
 Creates the project database and all required fact and dimension tables.
 
+````markdown
+# SQL Scripts
+
+This folder contains all SQL scripts used throughout the project, from database creation to exploratory data analysis.
+
+---
+
+## 📄 01_Database_Creation.sql
+
+### Purpose
+Creates the project database and all required fact and dimension tables.
+
 ### Key Components
 
+```sql
 -- Create Database
 CREATE DATABASE DB_Acquisition_Health_Audit;
+
 USE DB_Acquisition_Health_Audit;
 
 -- Create Dimension Tables
@@ -214,6 +228,7 @@ CREATE TABLE fact_orders (
 Ensures data integrity before performing analysis.
 
 ### Validation Checks
+
 1. Total records in Orders table
 2. Duplicate Order IDs
 3. Revenue calculation validation
@@ -268,6 +283,7 @@ ORDER BY acquisition_channel;
 Explores customer behavior and overall business performance.
 
 ### Analysis Performed
+
 - Customer Portfolio
 - Customer Lifetime Value (CLV)
 - Customer Lifespan
@@ -320,6 +336,7 @@ WHERE order_status='Delivered';
 Analyzes customer segments and marketing channel performance.
 
 ### Analysis Performed
+
 - Membership Tier Performance
 - Marketing Channel Performance
 - Click Through Rate (CTR)
